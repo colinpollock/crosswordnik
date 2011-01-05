@@ -23,7 +23,18 @@ class RestfulError(Exception):
 class InvalidRelationType(Exception):
     pass
 
-PARTS_OF_SPEECH = ['noun', 'verb', 'adjective', 'adverb', 'idiom', 'article', 'abbreviation', 'preposition', 'prefix', 'interjection','suffix', 'conjunction', 'adjective_and_adverb', 'noun_and_adjective',  'noun_and_verb_transitive', 'noun_and_verb', 'past_participle', 'imperative', 'noun_plural', 'proper_noun_plural', 'verb_intransitive', 'proper_noun', 'adjective_and_noun',   'imperative_and_past_participle', 'pronoun', 'verb_transitive', 'noun_and_verb_intransitive', 'adverb_and_preposition','proper_noun_posessive','noun_posessive']
+PARTS_OF_SPEECH = ['noun', 'verb', 'adjective', 'adverb', 'idiom', 'article', 
+                   'abbreviation', 'preposition', 'prefix', 'interjection',
+                   'suffix', 'conjunction', 'adjective_and_adverb', 
+                   'noun_and_adjective',  'noun_and_verb_transitive', 
+                   'noun_and_verb', 'past_participle', 'imperative', 
+                   'noun_plural', 'proper_noun_plural', 'verb_intransitive', 
+                   'proper_noun', 'adjective_and_noun',   
+                   'imperative_and_past_participle', 'pronoun', 
+                   'verb_transitive', 'noun_and_verb_intransitive', 
+                   'adverb_and_preposition','proper_noun_posessive',
+                   'noun_posessive'
+                  ]
 
 FORMAT_JSON = "json"
 FORMAT_XML = "xml"
@@ -110,7 +121,7 @@ class Wordnik(object):
         return self._get(request_uri, the_format=the_format)
 
     def definitions(self, word, count=None, partOfSpeech=None, the_format=None):
-        """Returns the definitions from wordnik if the requested word is in the corpus.
+        """Return the definitions if the requested word is in the corpus.
 
         Sample Response::
 
@@ -121,15 +132,19 @@ class Wordnik(object):
                   <partOfSpeech>n.</partOfSpeech>
                   <pos>0</pos>
                   <defTxtSummary>
-                     A domesticated carnivorous quadruped of the family Felidæ and genus
+                     A domesticated carnivorous quadruped of the family Felidæ 
+                     and genus
+
                      Felis, F. domestica.
                   </defTxtSummary>
                   <defTxtExtended>
-                     It is uncertain whether any animal now existing in a wild state is
-                     the ancestor of the domestic cat; probably it is descended from a
-                     cat originally domesticated in Egypt, though some regard the wildcat of Europe,
-                     <em>F. catus</em>, as the feral stock. The wildcat is much larger than the
-                     domestic cat, strong and ferocious, and very destructive to poultry, lambs, etc.
+                     It is uncertain whether any animal now existing in a wild
+                     state is the ancestor of the domestic cat; probably it is 
+                     descended from a cat originally domesticated in Egypt, 
+                     though some regard the wildcat of Europe,
+                     <em>F. catus</em>, as the feral stock. The wildcat is much
+                     larger than the domestic cat, strong and ferocious, and 
+                     very destructive to poultry, lambs, etc.
                   </defTxtExtended>
                </definition>
                ...
@@ -143,7 +158,8 @@ class Wordnik(object):
         """
 
         request_uri = "/api/word.%%s/%s/definitions" % (word )
-        request_uri = self._format_url_args(request_uri, count=count, partOfSpeech=partOfSpeech)
+        request_uri = self._format_url_args(request_uri, count=count, 
+                                            partOfSpeech=partOfSpeech)
         return self._get(request_uri, the_format=the_format)
 
     def examples(self, word, the_format=None):
@@ -154,10 +170,10 @@ class Wordnik(object):
             <examples>
                 <example>
                     <display>
-                    When there was room on the ledge outside of the pots and
-                    boxes for a cat, the cat was there--in sunny weather--stretched
-                    at full length, asleep and blissful, with her furry belly to the
-                    sun and a paw curved over her nose.
+                    When there was room on the ledge outside of the pots and 
+                    boxes for a cat, the cat was there--in sunny weather--
+                    stretched at full length, asleep and blissful, with her 
+                    furry belly to the sun and a paw curved over her nose.
                     </display>
                     <documentId>726554</documentId>
                     <exampleId>212090080</exampleId>
@@ -180,6 +196,7 @@ class Wordnik(object):
         request_uri = "/api/word.%%s/%s/examples" % ( word, )
         return self._get(request_uri, the_format=the_format)
 
+    #TODO: unmask `type` builtin
     def related(self, word, type=None, the_format=None):
         """Fetch related words for this word
 
@@ -197,7 +214,10 @@ class Wordnik(object):
           ...
           </words>
         """
-        all_types = [None, "synonym", "antonym", "form", "equivalent", "hyponym", "variant"]
+        #TODO: Why is None a type? Is it ever actually used? If so, how does
+        # Wordnik respond to "type=None"?
+        all_types = [None, "synonym", "antonym", "form", "equivalent", 
+                     "hyponym", "variant"]
         if type in all_types:
             request_uri = "/api/word.%%s/%s/related?type=%s" % (word, type, )
             return self._get(request_uri, the_format=the_format)
@@ -247,7 +267,9 @@ class Wordnik(object):
         return self._get(request_uri, the_format=the_format)
 
     def text_pronunciation(self, word, the_format=None):
-        """Fetch a word’s text pronunciation from the Wornik corpus, in arpabet and/or gcide-diacritical format.
+        """Fetch a word’s text pronunciation.
+        
+        The pronunciation is in arpabet and/or gcide-diacritical format.
 
         Sample response:
         <textProns>
@@ -302,7 +324,8 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/suggest.%%s/%s" % (fragment)
-        request_uri = self._format_url_args(request_uri, count=count, startAt=start_at)
+        request_uri = self._format_url_args(request_uri, count=count, 
+                                            startAt=start_at)
         return self._get(request_uri, the_format=the_format)
 
     def word_of_the_day(self, the_format=None):
@@ -342,7 +365,8 @@ class Wordnik(object):
         {'word': 'smatch', 'id': 96660}
         >>>
         """
-        request_uri = "/api/words.%%s/randomWord?hasDictionaryDef=%s" % ( has_definition, )
+        request_uri = "/api/words.%%s/randomWord?hasDictionaryDef=%s" %  \
+                      ( has_definition, )
         return self._get(request_uri, the_format=the_format)
 
 def main(args):
