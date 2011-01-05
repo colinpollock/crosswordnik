@@ -34,7 +34,7 @@ class Wordnik(object):
 
     def __init__(self, api_key, default_format=FORMAT_JSON):
         self.api_key = api_key
-        self.format = default_format
+        self.default_format = default_format
         self.formatters = {
                FORMAT_JSON: json.loads,
                FORMAT_XML: ElementTree.fromstring
@@ -45,24 +45,24 @@ class Wordnik(object):
             path += "?%s" % urllib.urlencode(kws)
         return path
 
-    def _get(self, request_uri, additional_headers=None, format=None):
-        """ make a GET request to the wordnik server """
+    def _get(self, request_uri, additional_headers=None, the_format=None):
+        """Make a GET request to the wordnik server """
         if additional_headers is None:
             additional_headers = {}
-        return self._make_request(request_uri, additional_headers, format, "GET")
+        return self._make_request(request_uri, additional_headers, the_format)
 
-    def _make_request(self, request_uri, additional_headers=None, format=None, method="GET"):
-        """ make a request to the wordnik server """
-
-        format = format or self.format
+    def _make_request(self, request_uri, additional_headers=None, 
+                      the_format=None, method="GET"):
+        """Make a request to the wordnik server """
+        the_format = the_format or self.default_format
         con = httplib.HTTPConnection(BASE_HOST)
         headers = {"api_key": self.api_key}
         if additional_headers is not None:
             headers.update(additional_headers)
-        con.request(method, request_uri % format, headers=headers)
+        con.request(method, request_uri % the_format, headers=headers)
         result = con.getresponse()
 
-        retval = self.formatters[format](result.read())
+        retval = self.formatters[the_format](result.read())
         if result.status != httplib.OK:
             try:
                 raise RestfulError(retval["message"])
@@ -71,7 +71,7 @@ class Wordnik(object):
 
         return retval 
 
-    def word(self, word, format=None):
+    def word(self, word, the_format=None):
         """Returns a word from wordnik if it is in the corpus.
 
         Sample Response::
@@ -89,9 +89,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/word.%%s/%s" % word
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def phrases(self, word, count=10, format=None):
+    def phrases(self, word, count=10, the_format=None):
         """Fetch bi-gram phrases containing a word.
 
         Sample Response:
@@ -107,9 +107,9 @@ class Wordnik(object):
         """
         request_uri = "/api/word.%%s/%s/phrases" % (word)
         request_uri = self._format_url_args(request_uri, count=count)
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def definitions(self, word, count=None, partOfSpeech=None, format=None):
+    def definitions(self, word, count=None, partOfSpeech=None, the_format=None):
         """Returns the definitions from wordnik if the requested word is in the corpus.
 
         Sample Response::
@@ -144,9 +144,9 @@ class Wordnik(object):
 
         request_uri = "/api/word.%%s/%s/definitions" % (word )
         request_uri = self._format_url_args(request_uri, count=count, partOfSpeech=partOfSpeech)
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def examples(self, word, format=None):
+    def examples(self, word, the_format=None):
         """Returns example usages of a word in the wordnik corpus.
 
         Sample Response::
@@ -178,9 +178,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/word.%%s/%s/examples" % ( word, )
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def related(self, word, type=None, format=None):
+    def related(self, word, type=None, the_format=None):
         """Fetch related words for this word
 
         Sample Response:
@@ -200,11 +200,11 @@ class Wordnik(object):
         all_types = [None, "synonym", "antonym", "form", "equivalent", "hyponym", "variant"]
         if type in all_types:
             request_uri = "/api/word.%%s/%s/related?type=%s" % (word, type, )
-            return self._get(request_uri, format=format)
+            return self._get(request_uri, the_format=the_format)
         else:
             raise InvalidRelationType()
 
-    def frequency(self, word, format=None):
+    def frequency(self, word, the_format=None):
         """Returns the usage frequency of a word in the wordnik corpus.
 
         Sample Response::
@@ -229,9 +229,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/word.%%s/%s/frequency" % (word, )
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def punctuation(self, word, format=None):
+    def punctuation(self, word, the_format=None):
         """Fetch a word's punctuation factor.
 
           Sample Response:
@@ -244,9 +244,9 @@ class Wordnik(object):
             </punctuationFactor>
         """
         request_uri = "/api/word.%%s/%s/punctuationFactor" % (word, )
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def text_pronunciation(self, word, format=None):
+    def text_pronunciation(self, word, the_format=None):
         """Fetch a word’s text pronunciation from the Wornik corpus, in arpabet and/or gcide-diacritical format.
 
         Sample response:
@@ -264,9 +264,9 @@ class Wordnik(object):
         </textProns>
         """
         request_uri = "/api/word.%%s/%s/pronunciations" % (word, )
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def suggest(self, fragment, count=1, start_at=0, format=None):
+    def suggest(self, fragment, count=1, start_at=0, the_format=None):
         """Returns a word from wordnik if it is in the corpus.
 
         Sample Response::
@@ -303,9 +303,9 @@ class Wordnik(object):
         """
         request_uri = "/api/suggest.%%s/%s" % (fragment)
         request_uri = self._format_url_args(request_uri, count=count, startAt=start_at)
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def word_of_the_day(self, format=None):
+    def word_of_the_day(self, the_format=None):
         """Fetches the *word of the day* from wordnik
 
         Sample Response::
@@ -330,9 +330,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/wordoftheday.%s"
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
-    def random_word(self, has_definition=False, format=None):
+    def random_word(self, has_definition=False, the_format=None):
         """Fetch a random word from the Alpha Corpus.
 
         >>> import wordnik
@@ -343,7 +343,7 @@ class Wordnik(object):
         >>>
         """
         request_uri = "/api/words.%%s/randomWord?hasDictionaryDef=%s" % ( has_definition, )
-        return self._get(request_uri, format=format)
+        return self._get(request_uri, the_format=the_format)
 
 def main(args):
 
