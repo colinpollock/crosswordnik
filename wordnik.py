@@ -345,9 +345,12 @@ class Wordnik(object):
 def main(args):
 
     parser = OptionParser()
-    parser.add_option("-f", "--format", dest="format", type="string", action="store", metavar="FORMAT")
-    parser.add_option("-a", "--api-key", dest="api_key", type="string", action="store", metavar="API_KEY")
-    parser.add_option("-c", "--choice", dest="choice",
+    parser.add_option("-f", "--format", dest="the_format", type="string", 
+                      action="store", metavar="FORMAT")
+    parser.add_option("-a", "--api-key", dest="api_key", type="string", 
+                      action="store", metavar="API_KEY")
+    parser.add_option("-c", "--choice", dest="choice", action="store",
+                      metavar="CHOICE",
                       choices=("word",
                                "definitions",
                                "frequency",
@@ -358,25 +361,28 @@ def main(args):
                                "phrases",
                                "related",
                                "punctuation",
-                               ),
-                      action="store",
-                      metavar="CHOICE"
+                               )
                       )
 
-    parser.set_defaults(format=Wordnik.FORMAT_JSON)
+    parser.set_defaults(the_format=FORMAT_JSON)
     parser.set_defaults(api_key=u"")
 
-    options, args = parser.parse_args(args[1:])
+    options, args = parser.parse_args(args)
+
+    if not options.api_key:
+        parser.error("Option --api_key is required.")
 
     try:
-        wordnik = Wordnik(api_key=options.api_key, format=options.format)
+        wordnik = Wordnik(api_key=options.api_key, 
+                          default_format=options.the_format)
     except (NameError, ), error:
         print error
     for arg in args:
         pprint(getattr(wordnik, options.choice)(arg))
 
 if __name__ == "__main__":
-    main(sys.argv)
+    exit(main(sys.argv[1:]))
 
-__docformat__ = u"restructuredtext en"
-__author__ = u"Altay Guvench"
+# TODO: For?
+#__docformat__ = u"restructuredtext en"
+#__author__ = u"Altay Guvench"
