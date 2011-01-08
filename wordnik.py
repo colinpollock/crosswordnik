@@ -51,9 +51,17 @@ class Wordnik(object):
                FORMAT_XML: ElementTree.fromstring
 			  }
 
-    def _format_url_args(self, path, **kws):
+    @staticmethod
+    def _format_url_args(path, **kws):
+        """Create a string of URL arguments.
+
+        Keyword arguments with the value None are ignored, and characters that
+        are changed by urllib.urlencode (e.g. " ", "*") are left unchanged.
+        """
         if kws:
-            path += "?%s" % urllib.urlencode(kws)
+            args = ['%s=%s' % (arg, val) for (arg, val) in kws.items() 
+                    if val is not None]
+            path += '?%s' % '&'.join(args)
         return path
 
     def _get(self, request_uri, additional_headers=None, the_format=None):
@@ -82,6 +90,7 @@ class Wordnik(object):
 
         return retval 
 
+    #TODO: maybe handle the format argument with a decorator.
     def word(self, word, the_format=None):
         """Returns a word from wordnik if it is in the corpus.
 
@@ -102,6 +111,40 @@ class Wordnik(object):
         request_uri = "/api/word.%%s/%s" % word
         return self._get(request_uri, the_format=the_format)
 
+    #TODO: maybe make query optional so that I can just search for words
+    # based on length. But at least one argument needs to be present.
+    #TODO: maybe use call to locals() so I don't have to repeat. But then I'll
+    #      need to change to camel case. Could get ugly.
+    def word_search(self, query, include_pos=None, exclude_pos=None, 
+                    min_corpus_count=None, max_corpus_count=None, 
+                    min_dictionary_count=None, max_dictionary_count=None, 
+                    min_length=None, max_length=None, skip=None, limit=None,
+                    the_format=None):
+        """Fetch words matching `query` and other optional constraints.
+        
+        TODO: KWargs
+        """
+        if include_pos is not None:
+            include_pos = ','.join(include_pos)
+        if exclude_pos is not None:
+            exclude_pos = ','.join(exclude_pos)
+
+        request_uri = self._format_url_args('/api/words.%s/search', query=query,
+            includePartOfSpeech=include_pos, excludePartOfSpeech=exclude_pos, 
+            minCorpusCount=min_corpus_count, maxCorpusCount=max_corpus_count, 
+            minDictionaryCount=min_dictionary_count, 
+            maxDictionaryCount=max_dictionary_count, minLength=min_length, 
+            maxLength=max_length, skip=skip, limit=limit, format=the_format)
+
+        # Return an empty list if the search fails.
+        #print 'URI', request_uri
+        try:
+            ret = self._get(request_uri, the_format=the_format)
+        except RestfulError:
+            ret = []
+        finally:
+            return ret
+
     def phrases(self, word, count=10, the_format=None):
         """Fetch bi-gram phrases containing a word.
 
@@ -120,6 +163,7 @@ class Wordnik(object):
         request_uri = self._format_url_args(request_uri, count=count)
         return self._get(request_uri, the_format=the_format)
 
+    #TODO: uncamelify partOfSpeech
     def definitions(self, word, count=None, partOfSpeech=None, the_format=None):
         """Return the definitions if the requested word is in the corpus.
 
@@ -406,6 +450,25 @@ def main(args):
         print error
     for arg in args:
         pprint(getattr(wordnik, options.choice)(arg))
+
+def _to_camelcase(s):
+    """Changes standard Python vars to camelcase. E.g. the_one -> theOne."""
+    new = [s[0]]
+    flag = False
+    for char in s[1:-1]:
+        if char == '_':
+            flag = True 
+        elif flag == True:
+            new.append(char.upper())
+            flag = False
+        else:
+            new.append(char)
+    new.append(s[-1])
+    return ''.join(new)
+
+        
+        
+
 
 if __name__ == "__main__":
     exit(main(sys.argv[1:]))
