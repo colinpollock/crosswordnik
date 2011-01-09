@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+
 """Thin wrapper around the restful API from wordnik.com
 
-This currently module presents a thin wrapper around the wordnik API.
+This module currently presents a thin wrapper around the wordnik API.
 """
-BASE_HOST = u"api.wordnik.com"
+
 
 import sys
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import simplejson as json
 import httplib
 import urllib
 from optparse import OptionParser
 from xml.etree import ElementTree
 from pprint import pprint
+
 
 class RestfulError(Exception):
     pass
@@ -23,65 +23,61 @@ class RestfulError(Exception):
 class InvalidRelationType(Exception):
     pass
 
-PARTS_OF_SPEECH = ['noun', 'verb', 'adjective', 'adverb', 'idiom', 'article', 
-                   'abbreviation', 'preposition', 'prefix', 'interjection',
-                   'suffix', 'conjunction', 'adjective_and_adverb', 
-                   'noun_and_adjective',  'noun_and_verb_transitive', 
-                   'noun_and_verb', 'past_participle', 'imperative', 
-                   'noun_plural', 'proper_noun_plural', 'verb_intransitive', 
-                   'proper_noun', 'adjective_and_noun',   
-                   'imperative_and_past_participle', 'pronoun', 
-                   'verb_transitive', 'noun_and_verb_intransitive', 
-                   'adverb_and_preposition','proper_noun_posessive',
-                   'noun_posessive'
-                  ]
+BASE_HOST = u"api.wordnik.com"
 
-FORMAT_JSON = "json"
-FORMAT_XML = "xml"
+PARTS_OF_SPEECH = set(['noun', 'verb', 'adjective', 'adverb', 'idiom', 
+                  'article', 'abbreviation', 'preposition', 'prefix', 
+                  'interjection', 'suffix', 'conjunction', 
+                  'adjective-and-adverb', 'noun-and-adjective',  
+                  'noun-and-verb-transitive', 'noun-and-verb', 
+                  'past-participle', 'imperative', 'noun-plural', 
+                  'proper-noun-plural', 'verb-intransitive', 'proper-noun', 
+                  'adjective-and-noun',   'imperative-and-past-participle', 
+                  'pronoun', 'verb-transitive', 'noun-and-verb-intransitive', 
+                  'adverb-and-preposition','proper-noun-posessive',
+                  'noun-posessive']) 
 
 
 class Wordnik(object):
     """ Wordnik API object """
 
+    FORMAT_JSON = "json"
+    FORMAT_XML = "xml"
+
     def __init__(self, api_key, default_format=FORMAT_JSON):
         self.api_key = api_key
         self.default_format = default_format
         self.formatters = {
-               FORMAT_JSON: json.loads,
-               FORMAT_XML: ElementTree.fromstring
+               Wordnik.FORMAT_JSON: json.loads,
+               Wordnik.FORMAT_XML: ElementTree.fromstring
 			  }
 
     @staticmethod
     def _format_url_args(path, **kws):
-        """Create a string of URL arguments.
-
-        Keyword arguments with the value None are ignored, and characters that
-        are changed by urllib.urlencode (e.g. " ", "*") are left unchanged.
-        """
+        #TODO: Rework everything so None is never passed in, then rm the check.
         if kws:
             args = ['%s=%s' % (arg, val) for (arg, val) in kws.items() 
                     if val is not None]
             path += '?%s' % '&'.join(args)
         return path
 
-    def _get(self, request_uri, additional_headers=None, the_format=None):
-        """Make a GET request to the wordnik server """
-        if additional_headers is None:
-            additional_headers = {}
-        return self._make_request(request_uri, additional_headers, the_format)
+    def _get(self, request_uri, additional_headers=None, format_=None):
+        """ make a GET request to the wordnik server """
+        return self._make_request(request_uri, additional_headers, format_)
 
-    def _make_request(self, request_uri, additional_headers=None, 
-                      the_format=None, method="GET"):
-        """Make a request to the wordnik server """
-        the_format = the_format or self.default_format
+    def _make_request(self, request_uri, additional_headers=None, format_=None, 
+                      method="GET"):
+        """ make a request to the wordnik server """
+
+        format_ = format_ or self.default_format
         con = httplib.HTTPConnection(BASE_HOST)
         headers = {"api_key": self.api_key}
         if additional_headers is not None:
             headers.update(additional_headers)
-        con.request(method, request_uri % the_format, headers=headers)
+        con.request(method, request_uri % format_, headers=headers)
         result = con.getresponse()
 
-        retval = self.formatters[the_format](result.read())
+        retval = self.formatters[format_](result.read())
         if result.status != httplib.OK:
             try:
                 raise RestfulError(retval["message"])
@@ -90,8 +86,13 @@ class Wordnik(object):
 
         return retval 
 
-    #TODO: maybe handle the format argument with a decorator.
-    def word(self, word, the_format=None):
+    def api_usage(self, format_=None):
+        """Return information about the user's API key usage."""
+        request_uri = "/api/account.%s/apiTokenStatus"
+        return self._get(request_uri, format_=format_)
+
+
+    def word(self, word, format_=None):
         """Returns a word from wordnik if it is in the corpus.
 
         Sample Response::
@@ -109,43 +110,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/word.%%s/%s" % word
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    #TODO: maybe make query optional so that I can just search for words
-    # based on length. But at least one argument needs to be present.
-    #TODO: maybe use call to locals() so I don't have to repeat. But then I'll
-    #      need to change to camel case. Could get ugly.
-    def word_search(self, query, include_pos=None, exclude_pos=None, 
-                    min_corpus_count=None, max_corpus_count=None, 
-                    min_dictionary_count=None, max_dictionary_count=None, 
-                    min_length=None, max_length=None, skip=None, limit=None,
-                    the_format=None):
-        """Fetch words matching `query` and other optional constraints.
-        
-        TODO: KWargs
-        """
-        if include_pos is not None:
-            include_pos = ','.join(include_pos)
-        if exclude_pos is not None:
-            exclude_pos = ','.join(exclude_pos)
-
-        request_uri = self._format_url_args('/api/words.%s/search', query=query,
-            includePartOfSpeech=include_pos, excludePartOfSpeech=exclude_pos, 
-            minCorpusCount=min_corpus_count, maxCorpusCount=max_corpus_count, 
-            minDictionaryCount=min_dictionary_count, 
-            maxDictionaryCount=max_dictionary_count, minLength=min_length, 
-            maxLength=max_length, skip=skip, limit=limit, format=the_format)
-
-        # Return an empty list if the search fails.
-        #print 'URI', request_uri
-        try:
-            ret = self._get(request_uri, the_format=the_format)
-        except RestfulError:
-            ret = []
-        finally:
-            return ret
-
-    def phrases(self, word, count=10, the_format=None):
+    def phrases(self, word, count=10, format_=None):
         """Fetch bi-gram phrases containing a word.
 
         Sample Response:
@@ -161,10 +128,9 @@ class Wordnik(object):
         """
         request_uri = "/api/word.%%s/%s/phrases" % (word)
         request_uri = self._format_url_args(request_uri, count=count)
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    #TODO: uncamelify partOfSpeech
-    def definitions(self, word, count=None, partOfSpeech=None, the_format=None):
+    def definitions(self, word, count=None, part_of_speech=None, format_=None):
         """Return the definitions if the requested word is in the corpus.
 
         Sample Response::
@@ -176,19 +142,15 @@ class Wordnik(object):
                   <partOfSpeech>n.</partOfSpeech>
                   <pos>0</pos>
                   <defTxtSummary>
-                     A domesticated carnivorous quadruped of the family Felidæ 
-                     and genus
-
+                     A domesticated carnivorous quadruped of the family Felidæ and genus
                      Felis, F. domestica.
                   </defTxtSummary>
                   <defTxtExtended>
-                     It is uncertain whether any animal now existing in a wild
-                     state is the ancestor of the domestic cat; probably it is 
-                     descended from a cat originally domesticated in Egypt, 
-                     though some regard the wildcat of Europe,
-                     <em>F. catus</em>, as the feral stock. The wildcat is much
-                     larger than the domestic cat, strong and ferocious, and 
-                     very destructive to poultry, lambs, etc.
+                     It is uncertain whether any animal now existing in a wild state is
+                     the ancestor of the domestic cat; probably it is descended from a
+                     cat originally domesticated in Egypt, though some regard the wildcat of Europe,
+                     <em>F. catus</em>, as the feral stock. The wildcat is much larger than the
+                     domestic cat, strong and ferocious, and very destructive to poultry, lambs, etc.
                   </defTxtExtended>
                </definition>
                ...
@@ -203,10 +165,10 @@ class Wordnik(object):
 
         request_uri = "/api/word.%%s/%s/definitions" % (word )
         request_uri = self._format_url_args(request_uri, count=count, 
-                                            partOfSpeech=partOfSpeech)
-        return self._get(request_uri, the_format=the_format)
+                                            partOfSpeech=part_of_speech)
+        return self._get(request_uri, format_=format_)
 
-    def examples(self, word, the_format=None):
+    def examples(self, word, format_=None):
         """Returns example usages of a word in the wordnik corpus.
 
         Sample Response::
@@ -214,10 +176,10 @@ class Wordnik(object):
             <examples>
                 <example>
                     <display>
-                    When there was room on the ledge outside of the pots and 
-                    boxes for a cat, the cat was there--in sunny weather--
-                    stretched at full length, asleep and blissful, with her 
-                    furry belly to the sun and a paw curved over her nose.
+                    When there was room on the ledge outside of the pots and
+                    boxes for a cat, the cat was there--in sunny weather--stretched
+                    at full length, asleep and blissful, with her furry belly to the
+                    sun and a paw curved over her nose.
                     </display>
                     <documentId>726554</documentId>
                     <exampleId>212090080</exampleId>
@@ -238,10 +200,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/word.%%s/%s/examples" % ( word, )
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    #TODO: unmask `type` builtin
-    def related(self, word, type=None, the_format=None):
+    def related(self, word, type_=None, format_=None):
         """Fetch related words for this word
 
         Sample Response:
@@ -258,17 +219,16 @@ class Wordnik(object):
           ...
           </words>
         """
-        #TODO: Why is None a type? Is it ever actually used? If so, how does
-        # Wordnik respond to "type=None"?
+        #TODO: It seems a little messy to pass around and handle None
         all_types = [None, "synonym", "antonym", "form", "equivalent", 
                      "hyponym", "variant"]
-        if type in all_types:
-            request_uri = "/api/word.%%s/%s/related?type=%s" % (word, type, )
-            return self._get(request_uri, the_format=the_format)
+        if type_ in all_types:
+            request_uri = "/api/word.%%s/%s/related?type=%s" % (word, type_)
+            return self._get(request_uri, format_=format_)
         else:
             raise InvalidRelationType()
 
-    def frequency(self, word, the_format=None):
+    def frequency(self, word, format_=None):
         """Returns the usage frequency of a word in the wordnik corpus.
 
         Sample Response::
@@ -293,9 +253,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/word.%%s/%s/frequency" % (word, )
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    def punctuation(self, word, the_format=None):
+    def punctuation(self, word, format_=None):
         """Fetch a word's punctuation factor.
 
           Sample Response:
@@ -308,12 +268,10 @@ class Wordnik(object):
             </punctuationFactor>
         """
         request_uri = "/api/word.%%s/%s/punctuationFactor" % (word, )
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    def text_pronunciation(self, word, the_format=None):
-        """Fetch a word’s text pronunciation.
-        
-        The pronunciation is in arpabet and/or gcide-diacritical format.
+    def text_pronunciation(self, word, format_=None):
+        """Fetch a word's pronunciation in arpabet or gcide-diacritical format.
 
         Sample response:
         <textProns>
@@ -330,9 +288,9 @@ class Wordnik(object):
         </textProns>
         """
         request_uri = "/api/word.%%s/%s/pronunciations" % (word, )
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    def suggest(self, fragment, count=1, start_at=0, the_format=None):
+    def suggest(self, fragment, count=1, start_at=0, format_=None):
         """Returns a word from wordnik if it is in the corpus.
 
         Sample Response::
@@ -370,9 +328,42 @@ class Wordnik(object):
         request_uri = "/api/suggest.%%s/%s" % (fragment)
         request_uri = self._format_url_args(request_uri, count=count, 
                                             startAt=start_at)
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    def word_of_the_day(self, the_format=None):
+    #TODO: maybe use call to locals() so I don't have to repeat. But then I'll
+    #      need to change to camel case. Could get ugly.
+    def word_search(self, query, include_pos=None, exclude_pos=None, 
+                    min_corpus_count=None, max_corpus_count=None, 
+                    min_dictionary_count=None, max_dictionary_count=None, 
+                    min_length=None, max_length=None, skip=None, limit=None,
+                    format_=None):
+        """Fetch words matching `query` and other optional constraints.
+        
+        TODO: KWargs
+        """
+        if include_pos is not None:
+            if not isinstance(include_pos, basestring):
+                include_pos = ','.join(include_pos)
+        if exclude_pos is not None:
+            if not isinstance(exclude_pos, basestring):
+                exclude_pos = ','.join(exclude_pos)
+
+        request_uri = self._format_url_args('/api/words.%s/search', query=query,
+            includePartOfSpeech=include_pos, excludePartOfSpeech=exclude_pos, 
+            minCorpusCount=min_corpus_count, maxCorpusCount=max_corpus_count, 
+            minDictionaryCount=min_dictionary_count, 
+            maxDictionaryCount=max_dictionary_count, minLength=min_length, 
+            maxLength=max_length, skip=skip, limit=limit)
+
+        # Return an empty list if the search fails.
+        # TODO: Find a way to only catch search failure errors
+        try:
+            ret = self._get(request_uri, format_=format_)
+        except RestfulError:
+            ret = []
+        return ret
+
+    def word_of_the_day(self, format_=None):
         """Fetches the *word of the day* from wordnik
 
         Sample Response::
@@ -397,9 +388,9 @@ class Wordnik(object):
             The JSON or XML response from wordnik
         """
         request_uri = "/api/wordoftheday.%s"
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
-    def random_word(self, has_definition=False, the_format=None):
+    def random_word(self, has_definition=False, format_=None):
         """Fetch a random word from the Alpha Corpus.
 
         >>> import wordnik
@@ -409,19 +400,19 @@ class Wordnik(object):
         {'word': 'smatch', 'id': 96660}
         >>>
         """
-        request_uri = "/api/words.%%s/randomWord?hasDictionaryDef=%s" %  \
+        request_uri = "/api/words.%%s/randomWord?hasDictionaryDef=%s" % \
                       ( has_definition, )
-        return self._get(request_uri, the_format=the_format)
+        return self._get(request_uri, format_=format_)
 
 def main(args):
 
     parser = OptionParser()
-    parser.add_option("-f", "--format", dest="the_format", type="string", 
-                      action="store", metavar="FORMAT")
+    parser.add_option("-f", "--format", dest="format_", action="store", 
+                      choices=(Wordnik.FORMAT_JSON, Wordnik.FORMAT_XML),
+                      default=Wordnik.FORMAT_JSON, metavar="FORMAT")
     parser.add_option("-a", "--api-key", dest="api_key", type="string", 
                       action="store", metavar="API_KEY")
-    parser.add_option("-c", "--choice", dest="choice", action="store",
-                      metavar="CHOICE",
+    parser.add_option("-c", "--choice", dest="choice",
                       choices=("word",
                                "definitions",
                                "frequency",
@@ -432,47 +423,23 @@ def main(args):
                                "phrases",
                                "related",
                                "punctuation",
-                               )
+                               ),
+                      action="store",
+                      metavar="CHOICE"
                       )
-
-    parser.set_defaults(the_format=FORMAT_JSON)
-    parser.set_defaults(api_key=u"")
 
     options, args = parser.parse_args(args)
 
     if not options.api_key:
-        parser.error("Option --api_key is required.")
+        parser.error('api_key must be specified.')
 
-    try:
-        wordnik = Wordnik(api_key=options.api_key, 
-                          default_format=options.the_format)
-    except (NameError, ), error:
-        print error
+    wordnik = Wordnik(api_key=options.api_key, default_format=options.format_)
+
     for arg in args:
         pprint(getattr(wordnik, options.choice)(arg))
-
-def _to_camelcase(s):
-    """Changes standard Python vars to camelcase. E.g. the_one -> theOne."""
-    new = [s[0]]
-    flag = False
-    for char in s[1:-1]:
-        if char == '_':
-            flag = True 
-        elif flag == True:
-            new.append(char.upper())
-            flag = False
-        else:
-            new.append(char)
-    new.append(s[-1])
-    return ''.join(new)
-
-        
-        
-
 
 if __name__ == "__main__":
     exit(main(sys.argv[1:]))
 
-# TODO: For?
-#__docformat__ = u"restructuredtext en"
-#__author__ = u"Altay Guvench"
+__docformat__ = u"restructuredtext en"
+__author__ = u"Altay Guvench"
