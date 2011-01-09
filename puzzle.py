@@ -5,9 +5,6 @@ import re
 import random
 import sys
 
-with open('/usr/share/dict/words', 'r') as f:
-    words = [w.strip() for w in f.readlines() if re.match(r'^\w+$', w)]
-
 from wordnik import Wordnik
 
 class Square(object):
@@ -16,10 +13,34 @@ class Square(object):
     def __init__(self, m, n):
         self.m = m
         self.n = n
-        self.letter = None
+        self._letter = None
         self.user_entry = None
         id_ = None
-        self.blacked_out = False
+        self._blacked_out = False
+
+    @property
+    def letter(self):
+        return self._letter
+
+    @letter.setter
+    def letter(self, val):
+        if self.blacked_out is True:
+            #TODO: new Exception
+            raise ValueError('Letter cannot be set for a blacked out square.')
+        self._letter = val
+            
+    @property
+    def blacked_out(self):
+        return self._blacked_out 
+
+    @blacked_out.setter
+    def blacked_out(self, val):
+        if val is not True:
+            raise ValueError("Blacking out of a square cannot be reversed.")
+        if self.letter is not None:
+            raise ValueError('Cannot black out a square containing a letter.')
+        self._blacked_out = val
+
 
     def __repr__(self):
         return 'Square@(%d, %d)=%s' % (self.m, self.n, self.letter)
