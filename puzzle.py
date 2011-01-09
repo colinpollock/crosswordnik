@@ -7,6 +7,7 @@ import sys
 
 from wordnik import Wordnik
 
+
 class Square(object):
     #TODO: setup properties for blacked_out and letter to make sure they're
     #      always exclusive
@@ -15,7 +16,7 @@ class Square(object):
         self.n = n
         self._letter = None
         self.user_entry = None
-        id_ = None
+        self.id_ = None
         self._blacked_out = False
 
     @property
@@ -89,12 +90,20 @@ class Word(object):
 class Puzzle(object):
     def __init__(self, rows, columns, word_count):
         self.grid = Grid(rows, columns)
-        self.words = []
+        #self.words = set()
+        self.words = {}
+
+        self._current_id = 1  # To keep track of Square IDs during grid creation
         self._populate_puzzle(word_count)
         self._blackout_blanks()
 
     def __str__(self):
         return str(self.grid)
+
+    def reavel(self):
+        strings = []
+
+
 
     def _populate_puzzle(self, word_count):
         #TODO: move key to config file
@@ -112,30 +121,64 @@ class Puzzle(object):
     def _place_seed_word(self):
         wotd = self.wordnik.word_of_the_day()
         word = wotd['wordstring']
+        #TODO: handle the WOTD being too long
         assert len(word) <= self.grid.num_columns
         #TODO: clean up, add Word(), add clue
+        #TODO: Choose starting position
         span = [(0, n) for n in range(len(word))]
-        self._insert_word(word, span)
+        self._add_word(word, span)
             
 
     def _add_a_word(self):
         open_spans = sorted(self._open_spans(), key=len, reverse=True)
-        #print "There are %d open spans." % len(open_spans)
         for span in open_spans:
             query = ''.join([str(self.grid[m, n]) for (m, n) in span])
             query = query.replace(' ', '?')
             length = len(query)
             words = self.wordnik.word_search(query, max_length=length)
-            #print "query '%s' matches %d words" % (query, len(words))
-            #print [w['wordstring'] for w in words]
             if words:
                 wordstrings = [w['wordstring'] for w in words]
                 word = random.choice(wordstrings)
-                self._insert_word(word, span)
-                self.words.append(word)
+                #self._put_word_on_grid(word, span)
+                #self._store_word(word)
+                self._add_word(word, span)
                 return
+
         #TODO: fail if no words work. backtrack?
         raise _FullGridError
+
+    def _store_word(self, word, id_, direction, clue):
+        """Store a word in self.words. Call after putting word on the grid."""
+        self.words[id_, direction] = (word, clue)
+        #TODO clues
+
+    @staticmethod
+    def _get_span_direction(span):
+        #TODO contants
+        if span[0][0] == span[1][0]: 
+            return 'HORIZONTAL'
+        elif span[0][1] == span[1][1]: 
+            return 'VERTICAL'
+        else:
+            assert False, "Sanity check"
+        return 'VERTICAL'
+
+    def _add_word(self, word, span):
+        """Place the word on the grid then add it and its clue to self.words."""
+        self._put_word_on_grid(word, span)
+        
+        m, n = span[0][0], span[0][1]
+        first_square = self.grid[m, n]
+        if first_square.id_ is None:
+            id_ = self._current_id
+            self._current_id += 1
+        else:
+            id_ = first_square.id_
+        definitions = self.wordnik.definitions(word)
+        definition = random.choice(definitions)['text']
+        direction = self._get_span_direction(span)
+        
+        self._store_word(word, id_, direction, definition)
 
     def _blackout_blanks(self):
         for m in range(self.grid.num_rows):
@@ -152,7 +195,7 @@ class Puzzle(object):
                 self.grid[m, n].blacked_out = True
 
 
-    def _insert_word(self, word, span):
+    def _put_word_on_grid(self, word, span):
         assert len(span) > 1, "Can't insert word shorter than two letters."
         for i, char in enumerate(word):
             (m, n) = span[i]
@@ -163,10 +206,11 @@ class Puzzle(object):
 
 
         # Black out open squares on either end of the word.
-        if span[0][0] == span[1][0]:  # word is horizontal
+        direction = self._get_span_direction(span)
+        if direction == 'HORIZONTAL':
             self._blackout_square(m, n - 1)
             self._blackout_square(m, n + 1)
-        elif span[0][1] == span[1][1]:  # word vertical
+        elif direction == 'VERTICAL':
             self._blackout_square(m, n - 1)
             self._blackout_square(m, n + 1)
         else:
@@ -253,6 +297,7 @@ def main():
     puzzle = Puzzle(10, 10, 11)
     print puzzle
     print len(puzzle.words)
+    pprint(puzzle.words)
 
 if __name__ == '__main__':
     main()
