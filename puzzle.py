@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
+
+"""
+This module contains code for creating crossword puzzles using the Wordnik API
+to find words and get their definitions to use as clues.
+"""
+
 from pprint import pprint
-import re
 import random
 import sys
 
@@ -9,8 +14,8 @@ from wordnik import Wordnik
 
 
 class Square(object):
-    #TODO: setup properties for blacked_out and letter to make sure they're
-    #      always exclusive
+    """Representation for a square on a grid."""
+
     def __init__(self, m, n):
         self.m = m
         self.n = n
@@ -21,10 +26,12 @@ class Square(object):
 
     @property
     def letter(self):
+        """Return the puzzle letter in the square (not the user's guess)."""
         return self._letter
 
     @letter.setter
     def letter(self, val):
+        """Sets the square's letter to be `val` unless square is blacked out."""
         if self.blacked_out is True:
             #TODO: new Exception
             raise ValueError('Letter cannot be set for a blacked out square.')
@@ -32,10 +39,12 @@ class Square(object):
             
     @property
     def blacked_out(self):
+        """Return True if the square does not and will not contain a letter."""
         return self._blacked_out 
 
     @blacked_out.setter
     def blacked_out(self, val):
+        """Blacks out the square if True is passed in."""
         if val is not True:
             raise ValueError("Blacking out of a square cannot be reversed.")
         if self.letter is not None:
@@ -57,7 +66,6 @@ class Square(object):
 
 class _FullGridError(Exception):
     """Raised during puzzle creation when grid is full and insertion fails."""
-    pass
 
 class Grid(object):
     def __init__(self, rows, columns):
@@ -100,19 +108,14 @@ class Puzzle(object):
     def __str__(self):
         return str(self.grid)
 
-    def reavel(self):
-        strings = []
-
-
-
     def _populate_puzzle(self, word_count):
         #TODO: move key to config file
-        api_key="08f33bb1a9d567c976c780c692001f689d039041b0b93a0cb"
+        api_key = "08f33bb1a9d567c976c780c692001f689d039041b0b93a0cb"
         self.wordnik = Wordnik(api_key)
         self._place_seed_word()
         for i in range(word_count - 1):
             try:
-                self._add_a_word()
+                self._find_and_add_a_word()
             except _FullGridError:
                 s = 'Board filled up after adding %d words.' % len(self.words)
                 print >> sys.stderr, s
@@ -123,25 +126,24 @@ class Puzzle(object):
         word = wotd['wordstring']
         #TODO: handle the WOTD being too long
         assert len(word) <= self.grid.num_columns
-        #TODO: clean up, add Word(), add clue
         #TODO: Choose starting position
         span = [(0, n) for n in range(len(word))]
         self._add_word(word, span)
             
 
-    def _add_a_word(self):
+    def _find_and_add_a_word(self):
+        #TODO: parameterize the span length then weight the choice
         open_spans = sorted(self._open_spans(), key=len, reverse=True)
         for span in open_spans:
             query = ''.join([str(self.grid[m, n]) for (m, n) in span])
             query = query.replace(' ', '?')
             length = len(query)
-            words = self.wordnik.word_search(query, max_length=length)
+            words = self.wordnik.word_search(query, max_length=length, 
+                                             min_dictionary_count=1)
             if words:
-                wordstrings = [w['wordstring'] for w in words]
-                word = random.choice(wordstrings)
-                #self._put_word_on_grid(word, span)
-                #self._store_word(word)
-                self._add_word(word, span)
+                # Currently choosing most frequent word. Parameterize!
+                word = max(words, key=lambda w: w['count'])
+                self._add_word(word['wordstring'], span)
                 return
 
         #TODO: fail if no words work. backtrack?
@@ -216,26 +218,6 @@ class Puzzle(object):
         else:
             assert False, "Sanity check"
 
-
-            
-
-    def _random_coords(self):
-        """Return a random (m, n) s.t. self.grid[m, n] is a square."""
-        m = random.randint(0, self.grid.num_rows - 1)
-        n = random.randint(0, self.grid.num_columns - 1)
-        #WHAT?
-        assert self.grid[m, n] is None
-        return (m, n)
-        
-    #USES Linux dicts. just for testing
-    def _get_word(self, pattern):
-        pattern = "^%s$" % pattern
-        print "pat is", pattern
-        pat = re.compile(pattern, re.MULTILINE)
-        m = pat.findall('\n'.join(words))
-        assert m # eventually just return None and retry
-        return random.choice(m)
-
     def _all_spans(self):
         spans = set()
         for m in range(self.grid.num_rows):
@@ -256,7 +238,8 @@ class Puzzle(object):
         return subspans
 
     def _adjacent_square_positions(self, sq):
-        fil = lambda sq: 0 <= sq[0] < self.grid.num_rows and 0 <= sq[1] < self.grid.num_columns
+        fil = lambda sq: 0 <= sq[0] < self.grid.num_rows and \
+                         0 <= sq[1] < self.grid.num_columns
         m, n = sq.m, sq.n
         return filter(fil, [(m + 1, n), (m, n + 1), (m - 1, n), (m, n - 1)])
 
@@ -294,7 +277,7 @@ class Puzzle(object):
 
 
 def main():
-    puzzle = Puzzle(10, 10, 11)
+    puzzle = Puzzle(10, 10, 10)
     print puzzle
     print len(puzzle.words)
     pprint(puzzle.words)
