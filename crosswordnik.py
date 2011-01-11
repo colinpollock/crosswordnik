@@ -385,8 +385,9 @@ def make_puzzle(rows, columns, num_words):
     return puzzle
 
 def demo():
+    # Make a 10 X 10 puzzle grid and try to add 10 words to it.
     puzzle = make_puzzle(10, 10, 10)
-    print puzzle
+    print "The grid:\n", puzzle
     print "The puzzle has %d clues:" % len(puzzle.clues)
     pprint(puzzle.clues)
 

@@ -1,0 +1,103 @@
+*** DESCRIPTION ***
+This program builds crossword puzzles by repeatedly searching Wordnik's corpus 
+for words that into a grid (i.e. can be placed on the grid in such a way that
+they have at least one letter in common with another word on the grid and that
+no non-words are created during placement). The program uses Wordnik's Word of 
+the Day as the first word on the grid.
+
+Currently there's no GUI. The text interface doesn't suffice for actual gameplaysince it can't display both a square's ID (e.g. the "3" in "3 Down") and its
+letter. However, you can see the output of the program by doing running the 
+demo() function in crosswordnik.py, reproduced with some additions below.
+
+*** EXAMPLE ***
+>>> # Make a 10 X 10 puzzle grid and try to add 10 words to it.
+>>> puzzle = make_puzzle(10, 10, 10)
+>>> print "The grid:\n", puzzle
+>>> print "The puzzle has %d clues:" % len(puzzle.clues)
+>>> pprint(puzzle.clues)
+
+which generates the following:
+
+The grid:
++----------+
+|night-bat*|
+|e**e**i*r*|
+|w**n**o*i*|
+|successful|
+|p**e**c*m*|
+|artfuli*p*|
+|p**o**e*h*|
+|exurban*at|
+|r**t**c*n*|
+|silhouette|
++----------+
+The puzzle has 10 clues:
+{(1, 'ACROSS'): ('night-bat', 'A large nocturnal moth.'),
+ (2, 'DOWN'): ('newspapers',
+               'third-person singular simple present indicative form of 
+                newspaper.'),
+ (3, 'ACROSS'): ('successful',
+                 'Having achieved wealth or eminence:  a successful 
+                  architect.'),
+ (4, 'DOWN'): ('henceforth', 'From this time forth; from now on.'),
+ (5, 'ACROSS'): ('silhouette',
+                 'To cause to be seen as a silhouette; outline:  Figures were 
+                  silhouetted against the setting sun. '),
+ (6, 'DOWN'): ('triumphant', 'Archaic   Triumphal.'),
+ (7, 'DOWN'): ('bioscience', 'See life science.'),
+ (8, 'ACROSS'): ('exurban', 'Of, pertaining to, or residing in an exurb'),
+ (9, 'ACROSS'): ('artful',
+                 'Skillful in accomplishing a purpose, especially by the use of
+                  cunning or craft.'),
+ (10, 'ACROSS'): ('at',
+                  'To or toward the direction or location of, especially for a 
+                   specific purpose:  Questions came at us from all sides. ')}
+
+
+
+*** TODO/IMPROVEMENTS ***
+* In the puzzle creation, words are only placed on spans of squares if those
+  spans aren't sitting next to any other spans. This makes it possible to
+  search for new words without having to worry about the repercussions. For
+  example, if "cat" is placed vertically and "ant" is also placed vertically,
+  to the right of "cat", then new horizontal words have to be added to ensure
+  that no incomplete words are on the grid. In this case, we would need words
+  that match "*ca*", "*an*", and "*tt*".
+
+  The placement of these subsequent words can add new requirements. I think
+  it's possible that trying to find these matches intermittently (say,
+  whenever the safe placement fails) might generate grids that are as good as
+  those generated entirely by the more intense, recursion requiring approach.
+
+* Come up with some heuristics for word selection and placement that lead to
+  better puzzles (where "better" most likely means "fuller"). This will go in
+  heuristics.py.
+
+* Add difficulty levels by controlling:
+    Word frequency (more frequent words are probably easier to guess)
+    Clue type (examples or definitions might be easier)
+    Word length
+
+* Make the clue selection better. In addition to definitions I could use example
+  sentences with the word replaced by underscores.
+
+  Often times the definitions are like "Plural form of aardvark" or "Paste tense
+  of eat". In these cases, I could either use an example or possibly build a new
+  clue by using the definition of the uninflected form and then mentioning the
+  inflection. For example: 
+      "A nocturnal borrowing mammal... (plural)".
+
+  Also, I want to avoid clues that contain (a possibly inflected) form of the
+  word itself.
+
+* Exclude words that contains hyphens or spaces, or somehow work them into
+  the grid.
+
+* Make a main program.
+
+* Make a GUI, either using TKinter or JS/CSS/etc.. The text based interface
+  isn't usable since I can't display the clue index in the squares and also
+  display the letters.
+
+* Add methods to Puzzle to allow manual creation of puzzles.
+
