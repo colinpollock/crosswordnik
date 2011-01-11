@@ -12,6 +12,11 @@ import sys
 
 from wordnik import Wordnik
 
+#TODO:
+#              put api_key outside
+#              maybe make populate_puzzle etc. public and have a separate
+#              class for gameplay
+#              main prog?
 
 class Square(object):
     """Representation for a square on a grid."""
@@ -68,12 +73,25 @@ class _FullGridError(Exception):
     """Raised during puzzle creation when grid is full and insertion fails."""
 
 class Grid(object):
+    """A basic, regtangular `m` by `n` grid.
+
+    Each square within the grid is a Square object, which is somewhat specific
+    to crossword puzzles and other word games (e.g. has "letter" field). This
+    could be avoided by making Square more generic.
+
+    Example, Usage:
+        grid = Grid(5, 10)
+        sq = grid[0, 9] 
+        sq.letter = 'L'
+    """
+
     def __init__(self, rows, columns):
         self.num_rows = rows
         self.num_columns = columns
         self.grid = [[Square(m, n) for n in range(columns)] 
                                    for m in range(rows)]
     def __str__(self):
+        """Return a text representation of the grid."""
         s = []
         s.append('+' + '-' * self.num_columns + '+')
         for row in  self.grid:
@@ -86,20 +104,32 @@ class Grid(object):
         return '\n'.join(s)
 
     def __setitem__(self, (m, n), item):
+        """Replace the default Square at (`m`, `n`) with `item`."""
         self.grid[m][n] = item
 
     def __getitem__(self, (m, n)):
+        """Return the Square at (`m`, `n`)."""
         return self.grid[m][n]
 
-class Word(object):
-    """Representation of a word on in the puzzle."""
-    pass
 
 class Puzzle(object):
+    """A crossword puzzle grid that automatically generates puzzles.
+
+    A `m` by `n` grid is populated with words from Wordnik's corpus. Currently
+    the resulting crossword puzzle cannot have parallel, adjacent words like you
+    would find in the NY TImes crossword.
+    
+    The grid itself is accessible through the __getitem__ method of the puzzle,
+    which provides access to the individual Squares. Clues are taken from 
+    Wordnik (definitions, example usages, synonyms, etc.) and are stored in a
+    dictionary from clue positions to words and clues:
+        self.clues[1, 'DOWN'] => ('cat', 'A small domestic animal')
+    """
+
+
     def __init__(self, rows, columns, word_count):
         self.grid = Grid(rows, columns)
-        #self.words = set()
-        self.words = {}
+        self.clues = {}
 
         self._current_id = 1  # To keep track of Square IDs during grid creation
         self._populate_puzzle(word_count)
@@ -117,7 +147,7 @@ class Puzzle(object):
             try:
                 self._find_and_add_a_word()
             except _FullGridError:
-                s = 'Board filled up after adding %d words.' % len(self.words)
+                s = 'Board filled up after adding %d words.' % len(self.clues)
                 print >> sys.stderr, s
                 break
 
@@ -149,24 +179,25 @@ class Puzzle(object):
         #TODO: fail if no words work. backtrack?
         raise _FullGridError
 
-    def _store_word(self, word, id_, direction, clue):
-        """Store a word in self.words. Call after putting word on the grid."""
-        self.words[id_, direction] = (word, clue)
+    #TODO: change to _store_clue
+    def _store_clue(self, word, id_, direction, clue):
+        """Store a word in self.clues. Call after putting word on the grid."""
+        self.clues[id_, direction] = (word, clue)
         #TODO clues
 
     @staticmethod
     def _get_span_direction(span):
         #TODO contants
         if span[0][0] == span[1][0]: 
-            return 'HORIZONTAL'
+            return 'ACROSS'
         elif span[0][1] == span[1][1]: 
-            return 'VERTICAL'
+            return 'DOWN'
         else:
             assert False, "Sanity check"
-        return 'VERTICAL'
+        return 'DOWN'
 
     def _add_word(self, word, span):
-        """Place the word on the grid then add it and its clue to self.words."""
+        """Place the word on the grid then add it and its clue to self.clues."""
         self._put_word_on_grid(word, span)
         
         m, n = span[0][0], span[0][1]
@@ -180,7 +211,7 @@ class Puzzle(object):
         definition = random.choice(definitions)['text']
         direction = self._get_span_direction(span)
         
-        self._store_word(word, id_, direction, definition)
+        self._store_clue(word, id_, direction, definition)
 
     def _blackout_blanks(self):
         for m in range(self.grid.num_rows):
@@ -209,10 +240,10 @@ class Puzzle(object):
 
         # Black out open squares on either end of the word.
         direction = self._get_span_direction(span)
-        if direction == 'HORIZONTAL':
+        if direction == 'ACROSS':
             self._blackout_square(m, n - 1)
             self._blackout_square(m, n + 1)
-        elif direction == 'VERTICAL':
+        elif direction == 'DOWN':
             self._blackout_square(m, n - 1)
             self._blackout_square(m, n + 1)
         else:
@@ -238,6 +269,7 @@ class Puzzle(object):
         return subspans
 
     def _adjacent_square_positions(self, sq):
+        """Return the (m, n) of squares adjacent to `sq` but not diagonally."""
         fil = lambda sq: 0 <= sq[0] < self.grid.num_rows and \
                          0 <= sq[1] < self.grid.num_columns
         m, n = sq.m, sq.n
@@ -245,32 +277,46 @@ class Puzzle(object):
 
 
     def _num_words_touching(self, sq):
-        # this doesn't work when the square is part of a word
+        """Return the number of unique words `sq` is touching."""
+        #TODO: exclude words that `sq` is part of?
         return sum(1 for (m, n) in self._adjacent_square_positions(sq)
                    if self.grid[m, n].letter is not None)
 
     def _a_letter_is_in_span(self, span):
+        """Return True if a square at any (m, n) in span contains a letter."""
         return any(self.grid[m, n].letter is not None for (m, n) in span)
 
     def _span_not_touching_too_many_words(self, span, max_touching):
+        """Return True if no square in `span` is touching too many words."""
         # Return True if no square in the span that is not part of a word is
         # touching more than `max_touching` words.
         return all(self._num_words_touching(self.grid[m, n]) <= max_touching 
                    for (m, n) in span if self.grid[m, n].letter is None)
 
     def _span_not_on_blacked_out(self, span):
+        """Return True if no (m, n) in `span` is a blacked out square."""
         return all(self.grid[m, n].blacked_out == False for (m, n) in span)
 
     def _span_not_full(self, span):
         return any(self.grid[m, n].letter is None for (m, n) in span)
 
     def _open_spans(self, max_words_touching=1):
-        # spans longer than 1
+        """Return a generator of of open spans, where each span is a tuple
+
+        Each span is a tuple of (m, n) pairs, where either m or n increases.
+
+        A span is open if:
+           the length of the span is greater than one,
+           at least one square is filled with a letter,
+           not all squares within it are filled with letters, 
+           no square is blacked out, and
+           no square is touching more than `max_words_touching` words.
+        """
         return (span for span in self._all_spans() if
                 len(span) > 1 and
-                self._span_not_full(span) and
                 self._a_letter_is_in_span(span) and
                 self._span_not_on_blacked_out(span) and 
+                self._span_not_full(span) and
                 self._span_not_touching_too_many_words(span, 
                                                             max_words_touching))
 
@@ -279,8 +325,8 @@ class Puzzle(object):
 def main():
     puzzle = Puzzle(10, 10, 10)
     print puzzle
-    print len(puzzle.words)
-    pprint(puzzle.words)
+    print len(puzzle.clues)
+    pprint(puzzle.clues)
 
 if __name__ == '__main__':
     main()
