@@ -5,22 +5,28 @@ they have at least one letter in common with another word on the grid and that
 no non-words are created during placement). The program uses Wordnik's Word of 
 the Day as the first word on the grid.
 
+* SETUP *
 The module wordnik.py is a copy of the Python Wordnik API file at 
-https://github.com/colinpollock/wordnik-python.
+https://github.com/colinpollock/wordnik-python. In order to use the API you'll 
+need to have a Wordnik API key.
 
+You can get one at "http://api.wordnik.com/signup/". You can pass your key as
+an argument to crosswordnik.CrosswordPuzzle or make_puzzle(), or you can set the
+variable WORDNIK_API_KEY in config.py
+
+
+*** EXAMPLE ***
 Currently there's no GUI. The text interface doesn't suffice for actual gameplaysince it can't display both a square's ID (e.g. the "3" in "3 Down") and its
 letter. However, you can see the output of the program by doing running the 
 demo() function in crosswordnik.py, reproduced below.
 
-
-*** EXAMPLE ***
 >>> # Make a 10 X 10 puzzle grid and try to add 10 words to it.
 >>> puzzle = make_puzzle(10, 10, 10)
 >>> print "The grid:\n", puzzle
 >>> print "The puzzle has %d clues:" % len(puzzle.clues)
 >>> pprint(puzzle.clues)
 
-which generates the following:
+which generates something like the following:
 
 The grid:
 +----------+

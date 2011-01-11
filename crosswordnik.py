@@ -230,6 +230,8 @@ class Grid(object):
                     subspans.add(span[i:j])
         return subspans
 
+class WordnikAPIKeyError(Exception):
+    """Raised when the given Wordnik API key isn't valid."""
 
 class CrosswordPuzzle(object):
     """A crossword puzzle grid that automatically generates puzzles.
@@ -250,11 +252,17 @@ class CrosswordPuzzle(object):
     number of words to the puzzle. 
     """
 
-    def __init__(self, rows, columns):
-        """Create a `rows` X `columns` grid and initialize the clues dict."""
+    def __init__(self, rows, columns, api_key=None):
+        """Create a `rows` X `columns` grid and initialize the clues dict.
+        
+        If `api_key` is not set then the key in config.py is tried.
+        """
         self.grid = Grid(rows, columns)
         self.clues = {}
-        self.wordnik = Wordnik(config.WORDNIK_API_KEY)
+        api_key = api_key or config.WORDNIK_API_KEY
+        if not api_key:
+            raise WordnikAPIKeyError('Enter your Wordnik API key in config.py')
+        self.wordnik = Wordnik(api_key)
         self._current_sq_id = 1  # To keep track of Square IDs
 
     def __str__(self):
@@ -377,9 +385,9 @@ class CrosswordPuzzle(object):
         sq.letter = letter
 
 
-def make_puzzle(rows, columns, num_words):
+def make_puzzle(rows, columns, num_words, api_key=None):
     """Return a `rows` by `columns` crossword puzzle with `num_words` words."""
-    puzzle = CrosswordPuzzle(rows, columns)
+    puzzle = CrosswordPuzzle(rows, columns, api_key)
     puzzle.populate_puzzle(num_words)
     puzzle.finalize()
     return puzzle
