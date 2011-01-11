@@ -12,7 +12,7 @@ Wordnik's corpus until no new words fit.
 The following example shows basic setup and game play. The text based interface
 isn't usable for actual game play so you would also need a way of displaying
 the grid and clues to the user and a way to get the user's input.
->>> puzzle = Puzzle(10, 10)  # Create a 10 X 10 puzzle grid
+>>> puzzle = CrosswordPuzzle(10, 10)  # Create a 10 X 10 puzzle grid
 >>> puzzle.populate_puzzle()
 >>> while not puzzle.is_completed:
 >>>     # SHOW GRID AND CLUES TO USER
@@ -231,7 +231,7 @@ class Grid(object):
         return subspans
 
 
-class Puzzle(object):
+class CrosswordPuzzle(object):
     """A crossword puzzle grid that automatically generates puzzles.
 
     A `m` by `n` grid is populated with words from Wordnik's corpus. Currently
@@ -280,7 +280,6 @@ class Puzzle(object):
 
         self.finalize()
         return words_added
-        
 
     def place_first_word(self):
         """Add the Wordnik Word of the Day as the first word in the puzzle."""
@@ -291,7 +290,6 @@ class Puzzle(object):
         span = [(0, n) for n in range(len(word))]
         self.add_word(word, span)
             
-
     def find_and_add_a_word(self):
         """Find a word in the Wordnik corpus that fits the puzzle and add it.
         
@@ -332,7 +330,6 @@ class Puzzle(object):
         
         self.store_clue(word, id_, direction, definition)
 
-
     def put_word_on_grid(self, word, span):
         """Add the nth letter in `word` to the nth position in `span`.  """
         assert len(word) == len(span)
@@ -343,7 +340,6 @@ class Puzzle(object):
                 self.grid[m, n].letter = char
             else:
                 assert self.grid[m, n].letter == char
-
 
         # Black out open squares on either end of the word if they exist.
         direction = self.grid.get_span_direction(span)
@@ -383,7 +379,7 @@ class Puzzle(object):
 
 def make_puzzle(rows, columns, num_words):
     """Return a `rows` by `columns` crossword puzzle with `num_words` words."""
-    puzzle = Puzzle(rows, columns)
+    puzzle = CrosswordPuzzle(rows, columns)
     puzzle.populate_puzzle(num_words)
     puzzle.finalize()
     return puzzle
