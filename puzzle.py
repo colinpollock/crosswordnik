@@ -12,8 +12,9 @@ import sys
 
 from wordnik import Wordnik
 
+import config
+
 #TODO:
-#              put api_key outside
 #              maybe make populate_puzzle etc. public and have a separate
 #              class for gameplay
 #              main prog?
@@ -140,8 +141,7 @@ class Puzzle(object):
 
     def _populate_puzzle(self, word_count):
         #TODO: move key to config file
-        api_key = "08f33bb1a9d567c976c780c692001f689d039041b0b93a0cb"
-        self.wordnik = Wordnik(api_key)
+        self.wordnik = Wordnik(config.WORDNIK_API_KEY)
         self._place_seed_word()
         for i in range(word_count - 1):
             try:
