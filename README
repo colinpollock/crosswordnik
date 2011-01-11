@@ -16,7 +16,8 @@ variable WORDNIK_API_KEY in config.py
 
 
 *** EXAMPLE ***
-Currently there's no GUI. The text interface doesn't suffice for actual gameplaysince it can't display both a square's ID (e.g. the "3" in "3 Down") and its
+Currently there's no GUI. The text interface doesn't suffice for actual gameplay
+since it can't display both a square's ID (e.g. the "3" in "3 Down") and its
 letter. However, you can see the output of the program by doing running the 
 demo() function in crosswordnik.py, reproduced below.
 
