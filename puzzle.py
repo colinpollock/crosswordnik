@@ -91,6 +91,9 @@ class Grid(object):
         self.num_columns = columns
         self.grid = [[Square(m, n) for n in range(columns)] 
                                    for m in range(rows)]
+
+        self.all_spans = self._get_all_spans()
+
     def __str__(self):
         """Return a text representation of the grid."""
         s = []
@@ -111,6 +114,27 @@ class Grid(object):
     def __getitem__(self, (m, n)):
         """Return the Square at (`m`, `n`)."""
         return self.grid[m][n]
+
+    def _get_all_spans(self):
+        """Return all possible spans on the grid."""
+        spans = set()
+        for m in range(self.grid.num_rows):
+            vert_span = []
+            hor_span = []
+            for n in range(self.grid.num_columns):
+                vert_span.append((m, n))
+                hor_span.append((n, m))
+            spans.add(tuple(vert_span))
+            spans.add(tuple(hor_span))
+    
+        subspans = set()
+        for span in spans:
+            for i in range(len(span)):
+                for j in range(i + 1, len(span) + 1):
+                    subspans.add(span[i:j])
+
+        return subspans
+
 
 
 class Puzzle(object):
@@ -140,7 +164,7 @@ class Puzzle(object):
         return str(self.grid)
 
     def _populate_puzzle(self, word_count):
-        #TODO: move key to config file
+        """Add `word_count` words and clues to the puzzle."""
         self.wordnik = Wordnik(config.WORDNIK_API_KEY)
         self._place_seed_word()
         for i in range(word_count - 1):
@@ -152,6 +176,7 @@ class Puzzle(object):
                 break
 
     def _place_seed_word(self):
+        """Add the Wordnik Word of the Day as the first word in the puzzle."""
         wotd = self.wordnik.word_of_the_day()
         word = wotd['wordstring']
         #TODO: handle the WOTD being too long
@@ -162,6 +187,7 @@ class Puzzle(object):
             
 
     def _find_and_add_a_word(self):
+        """Find a word in the Wordnik corpus that fits the puzzle and add it."""
         #TODO: parameterize the span length then weight the choice
         open_spans = sorted(self._open_spans(), key=len, reverse=True)
         for span in open_spans:
@@ -187,6 +213,7 @@ class Puzzle(object):
 
     @staticmethod
     def _get_span_direction(span):
+        """Return 'ACROSS' or 'DOWN' depending on the direction of `span`."""
         #TODO contants
         if span[0][0] == span[1][0]: 
             return 'ACROSS'
@@ -214,21 +241,29 @@ class Puzzle(object):
         self._store_clue(word, id_, direction, definition)
 
     def _blackout_blanks(self):
+        """Black out all open square in the board."""
         for m in range(self.grid.num_rows):
             for n in range(self.grid.num_columns):
                 sq = self.grid[m, n]
                 if sq.letter is None:
                     sq.blacked_out = True
 
+    def _are_valid_coordinates(self, m, n):
+        """Return True if (m, n) are coordinates for a square in the grid."""
+        return 0 <= m < self.grid.num_rows and 0 <= n < self.grid.num_columns
+        
+
     # Black out a square based on the given m, n if they're valid coordinaes
     def _blackout_square(self, m, n):
-        if 0 <= m < self.grid.num_rows and 0 <= n < self.grid.num_columns:
-            sq = self.grid[m, n]
-            if sq.letter is None:
-                self.grid[m, n].blacked_out = True
+        """Set `blacked_out` for the square at (`m`, `n`) to True."""
+        sq = self.grid[m, n]
+        if sq.letter is None:
+            self.grid[m, n].blacked_out = True
 
 
     def _put_word_on_grid(self, word, span):
+        """Add the nth letter in `word` to the nth position in `span`.  """
+        assert len(word) == len(span)
         assert len(span) > 1, "Can't insert word shorter than two letters."
         for i, char in enumerate(word):
             (m, n) = span[i]
@@ -238,35 +273,19 @@ class Puzzle(object):
                 assert self.grid[m, n].letter == char
 
 
-        # Black out open squares on either end of the word.
+        # Black out open squares on either end of the word if they exist.
         direction = self._get_span_direction(span)
         if direction == 'ACROSS':
-            self._blackout_square(m, n - 1)
-            self._blackout_square(m, n + 1)
+            for (m, n) in ((m, n - 1), (m, n + 1)):
+                if self._are_valid_coordinates(m, n):
+                    self._blackout_square(m, n)
+
         elif direction == 'DOWN':
-            self._blackout_square(m, n - 1)
-            self._blackout_square(m, n + 1)
+            for (m, n) in ((m - 1, n), (m + 1, n)):
+                if self._are_valid_coordinates(m, n):
+                    self._blackout_square(m, n)
         else:
             assert False, "Sanity check"
-
-    def _all_spans(self):
-        spans = set()
-        for m in range(self.grid.num_rows):
-            vert_span = []
-            hor_span = []
-            for n in range(self.grid.num_columns):
-                vert_span.append((m, n))
-                hor_span.append((n, m))
-            spans.add(tuple(vert_span))
-            spans.add(tuple(hor_span))
-    
-        subspans = set()
-        for span in spans:
-            for i in range(len(span)):
-                for j in range(i + 1, len(span) + 1):
-                    subspans.add(span[i:j])
-
-        return subspans
 
     def _adjacent_square_positions(self, sq):
         """Return the (m, n) of squares adjacent to `sq` but not diagonally."""
@@ -298,6 +317,7 @@ class Puzzle(object):
         return all(self.grid[m, n].blacked_out == False for (m, n) in span)
 
     def _span_not_full(self, span):
+        """Return True if not all squares in `span` contain letters."""
         return any(self.grid[m, n].letter is None for (m, n) in span)
 
     def _open_spans(self, max_words_touching=1):
@@ -312,7 +332,7 @@ class Puzzle(object):
            no square is blacked out, and
            no square is touching more than `max_words_touching` words.
         """
-        return (span for span in self._all_spans() if
+        return (span for span in self.grid.all_spans if
                 len(span) > 1 and
                 self._a_letter_is_in_span(span) and
                 self._span_not_on_blacked_out(span) and 
