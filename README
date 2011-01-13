@@ -64,6 +64,11 @@ The puzzle has 10 clues:
                   'To or toward the direction or location of, especially for a 
                    specific purpose:  Questions came at us from all sides. ')}
 
+*** BUGS ***
+* Occasionally two parallel words will overlap and create a non-word. For
+  example, in the two lines below "cat" and "dog" overlap.
+       cat
+         dog
 
 *** TODO/IMPROVEMENTS ***
 * In the puzzle creation, words are only placed on spans of squares if those
