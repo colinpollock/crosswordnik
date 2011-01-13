@@ -187,6 +187,24 @@ class Grid(object):
         """Return True if not all squares in `span` contain letters."""
         return any(self.grid[m][n].letter is None for (m, n) in span)
 
+    #TODO clean this up
+    def span_not_touching_letter(self, span):
+        """Return True if both ends of the span are black or open."""
+        first = span[0]
+        last = span[-1]
+        if self.get_span_direction(span) == 'ACROSS':
+            for m, n in [(first[0], first[1] - 1), (first[0], first[1] + 1)]:
+                if self.are_valid_coordinates(m, n):
+                    if self.grid[m][n].letter is not None:
+                        return False
+        else:
+            for m, n in [(first[0] - 1, first[1]), (first[0] + 1, first[1])]:
+                if self.are_valid_coordinates(m, n):
+                    if self.grid[m][n].letter is not None:
+                        return False
+        return True
+
+
     def open_spans(self, max_words_touching=1):
         """Return a generator of of open spans, where each span is a tuple
 
@@ -204,6 +222,7 @@ class Grid(object):
                 self.a_letter_is_in_span(span) and
                 self.span_not_on_blacked_out(span) and 
                 self.span_not_full(span) and
+                self.span_not_touching_letter(span) and
                 self.span_not_touching_too_many_words(span, 
                                                       max_words_touching))
 
@@ -291,7 +310,8 @@ class CrosswordPuzzle(object):
 
     def place_first_word(self):
         """Add the Wordnik Word of the Day as the first word in the puzzle."""
-        word = self.wordnik.word_of_the_day()['wordstring']
+#        word = self.wordnik.word_of_the_day()['wordstring']
+        word = 'spoilsman'
 
         #TODO: handle the WOTD being too long
         assert len(word) <= self.grid.num_columns
@@ -396,7 +416,7 @@ def make_puzzle(rows, columns, num_words, api_key=None):
 
 def demo():
     # Make a 10 X 10 puzzle grid and try to add 10 words to it.
-    puzzle = make_puzzle(10, 10, 10)
+    puzzle = make_puzzle(10, 10, 20)
     print "The grid:\n", puzzle
     print "The puzzle has %d clues:" % len(puzzle.clues)
     pprint(puzzle.clues)
