@@ -321,6 +321,7 @@ class CrosswordPuzzle(object):
         """Store a word in self.clues. Call after putting word on the grid."""
         self.clues[id_, direction] = (word, clue)
 
+
     def add_word(self, word, span):
         """Place the word on the grid then add it and its clue to self.clues."""
         self.put_word_on_grid(word, span)
@@ -330,6 +331,7 @@ class CrosswordPuzzle(object):
         if first_square.id_ is None:
             id_ = self._current_sq_id
             self._current_sq_id += 1
+            first_square.id_ = id_
         else:
             id_ = first_square.id_
         definitions = self.wordnik.definitions(word)
