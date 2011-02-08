@@ -4,8 +4,8 @@ import Image, ImageDraw, ImageFont
 import pickle
 import sys
 
-class GridMaker(object):
-    def __init__(self, num_rows, num_columns, square_length=10):
+class GridDrawer(object):
+    def __init__(self, num_rows, num_columns, square_length=50):
         self.num_rows = num_rows
         self.num_columns = num_columns
         self.square_length = square_length
@@ -49,21 +49,18 @@ class GridMaker(object):
         y = self.num_columns * self.square_length - 1
         self.draw.rectangle([(0, 0), (x, y)], outline=(0, 0, 0))
 
-def main():
-    """Pass in a pickled Puzzle to print it."""
-    with open(sys.argv[1], 'r') as f:
-        puzzle = pickle.load(f)
+
+def make_image(puzzle, output_filename):
     rows = puzzle.grid.num_rows
     columns = puzzle.grid.num_columns
-    gridmaker = GridMaker(rows, columns, 50)
+    griddrawer = GridDrawer(rows, columns)
     for m in range(rows):
         for n in range(columns):
             sq = puzzle.grid[m, n]
             if sq.blacked_out is False:
-                gridmaker.draw_square(sq.m, sq.n, sq.id_, sq.letter)
-    gridmaker.draw_outline()
-    gridmaker.output('pic.png')
-
+                griddrawer.draw_square(sq.m, sq.n, sq.id_, sq.letter)
+    griddrawer.draw_outline()
+    griddrawer.output(output_filename)
 
 if __name__ == '__main__':
     main()
