@@ -33,20 +33,20 @@ demo() function in crosswordnik.py, reproduced below.
 which generates something like the following:
 
 The grid:
-+----------+
-|night-bat*|
-|e**e**i*r*|
-|w**n**o*i*|
-|successful|
-|p**e**c*m*|
-|artfuli*p*|
-|p**o**e*h*|
-|exurban*at|
-|r**t**c*n*|
-|silhouette|
-+----------+
+  +----------+
+  |night-bat*|
+  |e**e**i*r*|
+  |w**n**o*i*|
+  |successful|
+  |p**e**c*m*|
+  |artfuli*p*|
+  |p**o**e*h*|
+  |exurban*at|
+  |r**t**c*n*|
+  |silhouette|
+  +----------+
 The puzzle has 10 clues:
-{(1, 'ACROSS'): ('night-bat', 'A large nocturnal moth.'),
+ {(1, 'ACROSS'): ('night-bat', 'A large nocturnal moth.'),
  (2, 'DOWN'): ('newspapers',
                'third-person singular simple present indicative form of 
                 newspaper.'),
@@ -67,11 +67,6 @@ The puzzle has 10 clues:
                   'To or toward the direction or location of, especially for a 
                    specific purpose:  Questions came at us from all sides. ')}
 
-*** BUGS ***
-* Occasionally two parallel words will overlap and create a non-word. For
-  example, in the two lines below "cat" and "dog" overlap.
-       cat
-         dog
 
 TODO/IMPROVEMENTS
 =================
