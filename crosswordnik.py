@@ -50,7 +50,6 @@ class Square(object):
     def letter(self, val):
         """Sets the square's letter to be `val` unless square is blacked out."""
         if self.blacked_out is True:
-            #TODO: new Exception
             raise ValueError('Letter cannot be set for a blacked out square.')
         self._letter = val
             
@@ -87,7 +86,7 @@ class Grid(object):
     to crossword puzzles and other word games (e.g. has "letter" field). This
     could be avoided by making Square more generic.
 
-    Example, Usage:
+    Example Usage:
         grid = Grid(5, 10)
         sq = grid[0, 9] 
         sq.letter = 'L'
@@ -99,7 +98,7 @@ class Grid(object):
         self.grid = [[Square(m, n) for n in range(columns)] 
                                    for m in range(rows)]
 
-        # The spans don't chance so they can be computed in the beginning.
+        # The spans don't change so they can be computed in the beginning.
         self.all_spans = self._get_all_spans()
 
     def __str__(self):
