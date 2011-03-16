@@ -270,7 +270,7 @@ class CrosswordPuzzle(object):
     number of words to the puzzle. 
     """
 
-    def __init__(self, rows, columns, api_key=None):
+    def __init__(self, rows=15, columns=15, api_key=None):
         """Create a `rows` X `columns` grid and initialize the clues dict.
         
         If `api_key` is not set then the key in config.py is tried.
@@ -307,13 +307,16 @@ class CrosswordPuzzle(object):
         self.finalize()
         return words_added
 
-    def place_first_word(self):
-        """Add the Wordnik Word of the Day as the first word in the puzzle."""
-#        word = self.wordnik.word_of_the_day()['wordstring']
-        word = 'spoilsman'
+    def place_first_word(self, word=None):
+        """Add the Wordnik Word of the Day as the first word in the puzzle.
+        
+        If no word is passed in, the Wordnik Word of the Day is used. 
+        """
+        if word is None:
+            word = self.wordnik.word_of_the_day()['wordstring']
 
         #TODO: handle the WOTD being too long
-        assert len(word) <= self.grid.num_columns
+        assert len(word) <= self.grid.num_columns, 'First word is too long.'
         span = [(0, n) for n in range(len(word))]
         self.add_word(word, span)
             
@@ -343,6 +346,7 @@ class CrosswordPuzzle(object):
 
     def add_word(self, word, span):
         """Place the word on the grid then add it and its clue to self.clues."""
+        print >> sys.stderr, 'Placing word "%s".' % word
         self.put_word_on_grid(word, span)
         
         m, n = span[0][0], span[0][1]
