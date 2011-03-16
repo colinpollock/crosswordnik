@@ -1,11 +1,13 @@
-*** DESCRIPTION ***
+DESCRIPTION
+===========
 This program builds crossword puzzles by repeatedly searching Wordnik's corpus 
-for words that into a grid (i.e. can be placed on the grid in such a way that
+for words that fit on a grid (i.e. can be placed on the grid in such a way that
 they have at least one letter in common with another word on the grid and that
-no non-words are created during placement). The program uses Wordnik's Word of 
-the Day as the first word on the grid.
+no non-words are created during placement). By default the program uses 
+Wordnik's Word of the Day as the first word on the grid.
 
-* SETUP *
+SETUP 
+-----
 The module wordnik.py is a copy of the Python Wordnik API file at 
 https://github.com/colinpollock/wordnik-python. In order to use the API you'll 
 need to have a Wordnik API key.
@@ -15,7 +17,8 @@ an argument to crosswordnik.CrosswordPuzzle or make_puzzle(), or you can set the
 variable WORDNIK_API_KEY in config.py
 
 
-*** EXAMPLE ***
+EXAMPLE
+=======
 Currently there's no GUI. The text interface doesn't suffice for actual gameplay
 since it can't display both a square's ID (e.g. the "3" in "3 Down") and its
 letter. However, you can see the output of the program by doing running the 
@@ -70,49 +73,6 @@ The puzzle has 10 clues:
        cat
          dog
 
-*** TODO/IMPROVEMENTS ***
-* In the puzzle creation, words are only placed on spans of squares if those
-  spans aren't sitting next to any other spans. This makes it possible to
-  search for new words without having to worry about the repercussions. For
-  example, if "cat" is placed vertically and "ant" is also placed vertically,
-  to the right of "cat", then new horizontal words have to be added to ensure
-  that no incomplete words are on the grid. In this case, we would need words
-  that match "*ca*", "*an*", and "*tt*".
-
-  The placement of these subsequent words can add new requirements. I think
-  it's possible that trying to find these matches intermittently (say,
-  whenever the safe placement fails) might generate grids that are as good as
-  those generated entirely by the more intense, recursion requiring approach.
-
-* Come up with some heuristics for word selection and placement that lead to
-  better puzzles (where "better" most likely means "fuller"). This will go in
-  heuristics.py.
-
-* Add difficulty levels by controlling:
-    Word frequency (more frequent words are probably easier to guess)
-    Clue type (examples or definitions might be easier)
-    Word length
-
-* Make the clue selection better. In addition to definitions I could use example
-  sentences with the word replaced by underscores.
-
-  Often times the definitions are like "Plural form of aardvark" or "Paste tense
-  of eat". In these cases, I could either use an example or possibly build a new
-  clue by using the definition of the uninflected form and then mentioning the
-  inflection. For example: 
-      "A nocturnal borrowing mammal... (plural)".
-
-  Also, I want to avoid clues that contain (a possibly inflected) form of the
-  word itself.
-
-* Exclude words that contains hyphens or spaces, or somehow work them into
-  the grid.
-
-* Make a main program.
-
-* Make a GUI, either using TKinter or JS/CSS/etc.. The text based interface
-  isn't usable since I can't display the clue index in the squares and also
-  display the letters.
-
-* Add methods to Puzzle to allow manual creation of puzzles.
-
+TODO/IMPROVEMENTS
+=================
+See TODO.rst.
