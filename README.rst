@@ -33,41 +33,47 @@ demo() function in crosswordnik.py, reproduced below.
 which generates something like the following:
 
 The grid:
-  +----------+
-  |night-bat*|
-  |e**e**i*r*|
-  |w**n**o*i*|
-  |successful|
-  |p**e**c*m*|
-  |artfuli*p*|
-  |p**o**e*h*|
-  |exurban*at|
-  |r**t**c*n*|
-  |silhouette|
-  +----------+
+
+::
+
++----------+
+|night-bat*|
+|e**e**i*r*|
+|w**n**o*i*|
+|successful|
+|p**e**c*m*|
+|artfuli*p*|
+|p**o**e*h*|
+|exurban*at|
+|r**t**c*n*|
+|silhouette|
++----------+
+
 The puzzle has 10 clues:
- {(1, 'ACROSS'): ('night-bat', 'A large nocturnal moth.'),
- (2, 'DOWN'): ('newspapers',
+    {(1, 'ACROSS'): ('night-bat', 'A large nocturnal moth.'),
+    (2, 'DOWN'): ('newspapers',
                'third-person singular simple present indicative form of 
                 newspaper.'),
- (3, 'ACROSS'): ('successful',
+    (3, 'ACROSS'): ('successful',
                  'Having achieved wealth or eminence:  a successful 
                   architect.'),
- (4, 'DOWN'): ('henceforth', 'From this time forth; from now on.'),
- (5, 'ACROSS'): ('silhouette',
+    (4, 'DOWN'): ('henceforth', 'From this time forth; from now on.'),
+    (5, 'ACROSS'): ('silhouette',
                  'To cause to be seen as a silhouette; outline:  Figures were 
                   silhouetted against the setting sun. '),
- (6, 'DOWN'): ('triumphant', 'Archaic   Triumphal.'),
- (7, 'DOWN'): ('bioscience', 'See life science.'),
- (8, 'ACROSS'): ('exurban', 'Of, pertaining to, or residing in an exurb'),
- (9, 'ACROSS'): ('artful',
+    (6, 'DOWN'): ('triumphant', 'Archaic   Triumphal.'),
+    (7, 'DOWN'): ('bioscience', 'See life science.'),
+    (8, 'ACROSS'): ('exurban', 'Of, pertaining to, or residing in an exurb'),
+    (9, 'ACROSS'): ('artful',
                  'Skillful in accomplishing a purpose, especially by the use of
                   cunning or craft.'),
- (10, 'ACROSS'): ('at',
+    (10, 'ACROSS'): ('at',
                   'To or toward the direction or location of, especially for a 
                    specific purpose:  Questions came at us from all sides. ')}
 
 
 TODO/IMPROVEMENTS
 =================
-See TODO.rst.
+* Fix the markup for the example run.
+
+* See TODO.rst.
