@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import division
+
 """
 Run tests on board creation decisions to see which choices make the best board.
 
@@ -17,3 +19,17 @@ Features (of words to be placed during board construction):
   Number of filled squares the span touches.
 
 """
+
+def get_proportion_filled(puzzle):
+    """Calculate the proportion of the squares that have letters.
+    
+    I read that traditionally no more than 16% of the grid should be empty.
+    """
+    total_squares = puzzle.grid.num_rows * puzzle.grid.num_columns
+    num_filled = sum(1 for sq in puzzle.grid if sq.letter is not None)
+    return num_filled / total_squares
+
+def get_num_words_placed(puzzle):
+    """Return the number of words placed in the puzzle."""
+    return len(puzzle.clues)
+
