@@ -1,6 +1,6 @@
 
 """Configuration variables."""
 
-# Visit "http://api.wordnik.com/signup/" to get an API key and then place it
-# in the field below.
-WORDNIK_API_KEY=''
+
+# Put your Wordnik API key here. Visit "developer.wordnik.com" to get one.
+WORDNIK_API_KEY = ''
