@@ -2,3 +2,5 @@
 *.pyo
 *.swp
 
+config.py  # Clean version w/o my API key is stored instead.
+
